@@ -251,8 +251,8 @@ def main():
     try:
         sp = spotipy.Spotify(
             client_credentials_manager=SpotifyClientCredentials(
-                client_id="d1abdd8d2c1d48058ae2128e03f5e1d2",
-                client_secret="9faed433292a475ebdcd5bc0be37b758"
+                client_id="YOUR_CLIENT_ID",
+                client_secret="YOUR_CLIENT_SECRET"
             )
         )
         recommender = AIRecommender(sp)
