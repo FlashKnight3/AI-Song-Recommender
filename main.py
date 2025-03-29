@@ -9,63 +9,17 @@ from sentence_transformers import SentenceTransformer
 import pandas as pd
 import time
 import warnings
-warnings.filterwarnings('ignore') 
+warnings.filterwarnings('ignore')  # Suppress warnings that might affect the UI
+
+# Page configuration
 st.set_page_config(
     page_title="AI Music Mood Matcher",
     page_icon="🎵",
     layout="wide"
 )
-st.markdown("""
-<style>
-    .main-header {
-        font-size: 3rem;
-        font-weight: 700;
-        color: #1DB954;
-        margin-bottom: 0.5rem;
-        text-align: center;
-    }
-    .sub-header {
-        font-size: 1.5rem;
-        font-weight: 400;
-        color: #777777;
-        margin-bottom: 2rem;
-        text-align: center;
-    }
-    .stButton > button {
-        background-color: #1DB954;
-        color: white;
-        font-weight: bold;
-        border: none;
-        border-radius: 30px;
-        padding: 0.5rem 1rem;
-        width: 100%;
-    }
-    .stProgress > div > div {
-        background-color: #1DB954;
-    }
-    div.block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-    }
-    footer {
-        visibility: hidden;
-    }
-    .spotify-button {
-        display: inline-block;
-        background-color: #1DB954;
-        color: white;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        text-align: center;
-        line-height: 40px;
-        margin-right: 10px;
-    }
-    .spotify-button:hover {
-        background-color: #1ed760;
-    }
-</style>
-""", unsafe_allow_html=True)
+
+
+# App title and header
 st.markdown('<h1 class="main-header">🎵 AI Music Mood Matcher</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-header">Find the perfect songs for your current mood</p>', unsafe_allow_html=True)
 
@@ -122,6 +76,7 @@ class AIRecommender:
             
             # Convert the user input into a vector for comparison
             input_embedding = self.text_embedder.encode(text_input)
+            
             # Calculate similarity with mood categories
             mood_scores = {}
             for mood, mood_embedding in self.mood_embeddings.items():
@@ -507,8 +462,8 @@ class AIRecommender:
 def initialize_spotify():
     """Initialize and return a Spotify client."""
     # Using demo credentials - replace with your own
-    client_id = ""
-    client_secret = ""
+    client_id = "d1abdd8d2c1d48058ae2128e03f5e1d2"
+    client_secret = "225a0058ca6747b189acffc87704f3d9"
     
     try:
         auth_manager = SpotifyClientCredentials(
@@ -645,7 +600,7 @@ with tab1:
                 # Get recommender instance
                 # Use session_state to maintain a single recommender instance throughout the session
                 if 'recommender' not in st.session_state:
-                    st.session_state.recommender = get_recommender("c49d7c30cacc4ab58f4c8e2a29def2d8", "89ba13534ddd4ce9a6c9f38868cdacf9")
+                    st.session_state.recommender = get_recommender("d1abdd8d2c1d48058ae2128e03f5e1d2", "225a0058ca6747b189acffc87704f3d9")
                 recommender = st.session_state.recommender
                 
                 # Get mood
@@ -746,4 +701,4 @@ st.markdown("---")
 st.markdown("🎵 AI Music Mood Matcher - Find your perfect soundtrack")
 
 if __name__ == "__main__":
-    pass  
+    pass  # The app runs automatically with Streamlit
