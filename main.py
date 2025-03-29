@@ -221,7 +221,7 @@ class AIRecommender:
         return score
 
     def get_recommendations(self, artist_name, mood_input, limit=10, min_popularity=20):
-        """Get AI-powered music recommendations from various artists."""
+        """Get AI-powered music recommendations from various artists, including international ones."""
         try:
             # First analyze the mood
             detected_mood, mood_scores = self.analyze_mood(mood_input)
@@ -250,14 +250,35 @@ class AIRecommender:
                 # If no genres found, we'll use related artists instead
                 similar_artists = []
                 
+                # Define international genres to incorporate global music
+                international_genres = [
+                    "k-pop", "j-pop", "reggaeton", "latin", "afrobeat", 
+                    "brazilian", "indian", "bollywood", "mandopop", "french",
+                    "german", "spanish", "italian", "arabic", "african"
+                ]
+                
+                # Add international genre search
+                for genre in international_genres[:3]:  # Use 3 random international genres
+                    try:
+                        int_results = self.sp.search(q=f"genre:{genre}", type='artist', limit=5)
+                        if int_results.get('artists', {}).get('items'):
+                            for int_artist in int_results['artists']['items']:
+                                if int_artist['id'] not in [a.get('id') for a in similar_artists]:
+                                    similar_artists.append(int_artist)
+                    except:
+                        # Skip if there's an issue with this genre
+                        continue
+                
                 if artist_genres:
                     # Search for artists with at least one matching genre
                     genre_query = artist_genres[0] if artist_genres else "pop"
-                    genre_results = self.sp.search(q=f"genre:{genre_query}", type='artist', limit=15)  # Increased from 10 to 15
-                    similar_artists = genre_results['artists']['items']
+                    genre_results = self.sp.search(q=f"genre:{genre_query}", type='artist', limit=15)
+                    for genre_artist in genre_results['artists']['items']:
+                        if genre_artist['id'] not in [a.get('id') for a in similar_artists]:
+                            similar_artists.append(genre_artist)
                 
                 # If we didn't get enough from genres, get related artists
-                if len(similar_artists) < 10:  # Increased from 5 to 10
+                if len(similar_artists) < 15:
                     try:
                         related = self.sp.artist_related_artists(artist['id'])
                         related_artists = related['artists']
@@ -265,14 +286,15 @@ class AIRecommender:
                         # Add any new artists not already in the list
                         for related_artist in related_artists:
                             if related_artist['id'] != artist['id']:
-                                if related_artist['id'] not in [a['id'] for a in similar_artists]:
+                                if related_artist['id'] not in [a.get('id') for a in similar_artists]:
                                     similar_artists.append(related_artist)
                     except:
                         # If we can't get related artists, just continue with what we have
                         pass
                 
                 # Make sure we include original artist in the list
-                similar_artists = [artist] + [a for a in similar_artists if a['id'] != artist['id']]
+                if artist not in similar_artists:
+                    similar_artists = [artist] + similar_artists
                 
             else:
                 # Use the track's artist from the track search
@@ -283,10 +305,26 @@ class AIRecommender:
                 try:
                     related = self.sp.artist_related_artists(artist['id'])
                     similar_artists = [artist] + related['artists']
+                    
+                    # Add some international artists
+                    for genre in ["k-pop", "latin", "afrobeat"][:2]:
+                        int_results = self.sp.search(q=f"genre:{genre}", type='artist', limit=3)
+                        if int_results.get('artists', {}).get('items'):
+                            for int_artist in int_results['artists']['items']:
+                                if int_artist['id'] not in [a.get('id') for a in similar_artists]:
+                                    similar_artists.append(int_artist)
                 except:
-                    # If we can't get related artists, just use a popular genre
-                    results = self.sp.search(q='genre:pop', type='artist', limit=15)  # Increased from 10 to 15
-                    similar_artists = results['artists']['items']
+                    # If we can't get related artists, use international genres
+                    similar_artists = [artist]
+                    for genre in ["pop", "k-pop", "latin", "afrobeat", "bollywood"]:
+                        try:
+                            results = self.sp.search(q=f"genre:{genre}", type='artist', limit=5)
+                            if results.get('artists', {}).get('items'):
+                                for int_artist in results['artists']['items']:
+                                    if int_artist['id'] not in [a.get('id') for a in similar_artists]:
+                                        similar_artists.append(int_artist)
+                        except:
+                            continue
             
             # Collect tracks from multiple artists based on mood
             all_tracks = []
@@ -486,11 +524,53 @@ def initialize_spotify():
         st.error(f"Failed to connect to Spotify API: {str(e)}")
         return None
 
-# Spotify logo SVG for button
+# Spotify logo SVG - clean button
 spotify_logo_svg = """
-<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24" viewBox="0 0 24 24" fill="white">
+<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24" viewBox="0 0 24 24" fill="#1DB954">
     <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
 </svg>
+"""
+
+
+# Cleaner CSS for better UI
+minimalist_css = """
+<style>
+.song-display {
+    margin-bottom: 20px;
+}
+.song-title {
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    color: #333;
+    text-transform: uppercase;
+}
+.artist-name {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 5px;
+}
+.album-name {
+    font-size: 15px;
+    color: #666;
+    margin-bottom: 15px;
+}
+.spotify-link {
+    color: #1DB954;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    margin-top: 10px;
+}
+.spotify-link:hover {
+    text-decoration: underline;
+}
+.spotify-link svg {
+    margin-right: 5px;
+}
+</style>
 """
 
 # Sidebar for app information
@@ -510,12 +590,17 @@ with st.sidebar:
     🤖 **AI Matching**
     - Uses neural networks
     - Finds perfect song matches
+    
+    🌎 **Global Music**
+    - Discovers international artists
+    - Explores diverse cultures
     """)
     
     st.divider()
     st.header("📊 Quick Stats")
     st.metric("AI Models", "3")
     st.metric("Music Features", "11")
+    st.metric("Global Genres", "15+")
 
 # Main content - tabs
 tab1, tab2 = st.tabs(["🎯 Get Recommendations", "ℹ️ About"])
@@ -642,8 +727,12 @@ with tab1:
                     artist_count = len(set(track['artists'][0]['name'] for track in recommendations))
                     st.success(f"🎉 Found {len(recommendations)} perfect matches from {artist_count} different artists for your {dominant_mood} mood!")
                     
-                    # Display recommendations in a grid (using dynamic columns based on screen size)
+                    # Display recommendations in a clean grid
+                    # Display recommendations in a minimalist style
                     num_columns = 3
+                    
+                    # Inject CSS for minimalist UI
+                    st.markdown(minimalist_css, unsafe_allow_html=True)
                     
                     for i in range(0, len(recommendations), num_columns):
                         cols = st.columns(num_columns)
@@ -654,29 +743,29 @@ with tab1:
                                 track_score = scores[idx]
                                 
                                 with col:
+                                    # Album image
                                     if track['album']['images']:
                                         st.image(
                                             track['album']['images'][0]['url'],
                                             use_column_width=True
                                         )
                                     
-                                    st.markdown(f"**{track['name']}**")
-                                    st.write(f"by {track['artists'][0]['name']}")
-                                    st.write(f"Album: {track['album']['name']}")
+                                    # Simple track display like example
+                                    html_content = f"""
+                                    <div class="song-display">
+                                        <div class="song-title">{track['name']}</div>
+                                        <div class="artist-name">by {track['artists'][0]['name']}</div>
+                                        <div class="album-name">Album: {track['album']['name']}</div>
+                                        <a href="{track['external_urls']['spotify']}" target="_blank" class="spotify-link">
+                                            {spotify_logo_svg} Listen on Spotify
+                                        </a>
+                                    </div>
+                                    """
+                                    st.markdown(html_content, unsafe_allow_html=True)
                                     
-                                    # Display score as text
-                                    st.write(f"Match score: {track_score:.0%}")
-                                    
-                                    col1, col2 = st.columns(2)
-                                    with col1:
-                                        # Spotify logo button that links to the track
-                                        st.markdown(
-                                            f'<a href="{track["external_urls"]["spotify"]}" target="_blank"><div class="spotify-button">{spotify_logo_svg}</div></a>',
-                                            unsafe_allow_html=True
-                                        )
+                                    # Preview audio if available 
                                     if track['preview_url']:
-                                        with col2:
-                                            st.audio(track['preview_url'])
+                                        st.audio(track['preview_url'])
                 else:
                     st.error("Couldn't find any recommendations. Try another artist or mood description.")
             
@@ -693,7 +782,19 @@ with tab2:
     - Analyze your current mood through natural language processing
     - Extract and analyze audio features from songs
     - Match songs to your mood using neural networks
-    - Provide personalized recommendations from diverse artists
+    - Provide personalized recommendations from diverse artists worldwide
+    """)
+    
+    st.subheader("✨ Global Music Discovery")
+    st.write("""
+    Our recommendation engine now includes music from around the world! Discover amazing artists from:
+    
+    - K-pop and J-pop scenes
+    - Latin American and Reggaeton hits
+    - African and Afrobeat rhythms
+    - Indian and Bollywood classics
+    - European music across multiple languages
+    - And many more international genres!
     """)
 
 # Simple footer
