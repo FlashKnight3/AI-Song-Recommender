@@ -507,8 +507,8 @@ class AIRecommender:
 def initialize_spotify():
     """Initialize and return a Spotify client."""
     # Using demo credentials - replace with your own
-    client_id = "c49d7c30cacc4ab58f4c8e2a29def2d8"
-    client_secret = "89ba13534ddd4ce9a6c9f38868cdacf9"
+    client_id = ""
+    client_secret = ""
     
     try:
         auth_manager = SpotifyClientCredentials(
