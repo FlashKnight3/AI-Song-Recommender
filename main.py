@@ -462,8 +462,8 @@ class AIRecommender:
 def initialize_spotify():
     """Initialize and return a Spotify client."""
     # Using demo credentials - replace with your own
-    client_id = "d1abdd8d2c1d48058ae2128e03f5e1d2"
-    client_secret = "225a0058ca6747b189acffc87704f3d9"
+    client_id = ""
+    client_secret = ""
     
     try:
         auth_manager = SpotifyClientCredentials(
@@ -600,7 +600,7 @@ with tab1:
                 # Get recommender instance
                 # Use session_state to maintain a single recommender instance throughout the session
                 if 'recommender' not in st.session_state:
-                    st.session_state.recommender = get_recommender("d1abdd8d2c1d48058ae2128e03f5e1d2", "225a0058ca6747b189acffc87704f3d9")
+                    st.session_state.recommender = get_recommender("", "")
                 recommender = st.session_state.recommender
                 
                 # Get mood
